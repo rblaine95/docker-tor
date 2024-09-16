@@ -2,7 +2,7 @@ FROM docker.io/alpine:3
 
 ARG TOR_VERSION="latest"
 RUN \
-  if [ -z "$TOR_VERSION" ] || [ "$TOR_VERSION" = "latest" ]; then \
+  if [ "$TOR_VERSION" = "latest" ]; then \
     apk add --update --no-cache tor; \
   else \
     apk add --update --no-cache tor="$TOR_VERSION"; \
