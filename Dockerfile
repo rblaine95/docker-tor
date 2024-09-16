@@ -10,6 +10,7 @@ RUN \
   && chown -R tor /etc/tor
 
 COPY entrypoint.sh /entrypoint.sh
+COPY LICENSE /LICENSE
 
 EXPOSE 9050
 
