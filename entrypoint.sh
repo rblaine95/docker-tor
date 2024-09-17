@@ -18,7 +18,10 @@ do
     case "$key" in
         TOR_*)
             case "$key" in
-                *_TOR_HIDDEN_SERVICE_*) ;;
+                TOR_HIDDEN_SERVICE_VERSION) ;;  # Skip, we'll handle this separately
+                TOR_HIDDEN_SERVICE_DIR) ;;      # Skip, we'll handle this separately
+                TOR_HIDDEN_SERVICE_PORT) ;;     # Skip, we'll handle this separately
+                *_TOR_HIDDEN_SERVICE_*) ;;      # Skip, we'll handle this separately
                 *)
                     # Remove TOR_ prefix and convert to CamelCase
                     torrc_key=$(to_camel_case "${key#TOR_}")
@@ -30,23 +33,36 @@ do
     esac
 done
 
-# Process Hidden Services
+# Get the HiddenServiceVersion if set
+hidden_service_version=${TOR_HIDDEN_SERVICE_VERSION:-""}
+
+# Function to add a hidden service to torrc
+add_hidden_service() {
+    local dir="$1"
+    local port="$2"
+    echo "HiddenServiceDir $dir" >> $TORRC
+    echo "HiddenServicePort $port" >> $TORRC
+    if [ -n "$hidden_service_version" ]; then
+        echo "HiddenServiceVersion $hidden_service_version" >> $TORRC
+    fi
+    echo "" >> $TORRC  # Add a blank line for readability
+}
+
+# Add default hidden service if specified
+if [ -n "$TOR_HIDDEN_SERVICE_DIR" ] && [ -n "$TOR_HIDDEN_SERVICE_PORT" ]; then
+    add_hidden_service "$TOR_HIDDEN_SERVICE_DIR" "$TOR_HIDDEN_SERVICE_PORT"
+fi
+
+# Process numbered Hidden Services
 env | sort | while IFS='=' read -r key value
 do
     case "$key" in
         *_TOR_HIDDEN_SERVICE_DIR)
-            echo "HiddenServiceDir $value" >> $TORRC
-
-            # Extract service prefix
             service_prefix=${key%_TOR_HIDDEN_SERVICE_DIR}
-
-            # Look for corresponding port configuration
             port_value=$(env | grep "^${service_prefix}_TOR_HIDDEN_SERVICE_PORT=" | cut -d'=' -f2-)
             if [ -n "$port_value" ]; then
-                echo "HiddenServicePort $port_value" >> $TORRC
+                add_hidden_service "$value" "$port_value"
             fi
-
-            echo "" >> $TORRC  # Add a blank line for readability
             ;;
     esac
 done
@@ -55,5 +71,48 @@ done
 echo "Generated torrc:"
 cat $TORRC
 
-# Start Tor with the generated config
-exec tor -f $TORRC
+# Function to get hostname from hidden service directory
+get_hostname() {
+    if [ -f "$1/hostname" ]; then
+        cat "$1/hostname"
+    else
+        echo "N/A (hostname file not found)"
+    fi
+}
+
+# Function to print service and hostname with consistent indentation
+print_service_hostname() {
+    printf "%-15s %s\n" "$1:" "$2"
+}
+
+# Start Tor in the background
+tor -f $TORRC &
+tor_pid=$!
+
+sleep 1
+
+# Print Hidden Service Hostnames
+echo ""
+echo "======== Hidden Service Hostnames ========"
+
+# Print default hidden service if exists
+if [ -n "$TOR_HIDDEN_SERVICE_DIR" ]; then
+    print_service_hostname "Default" "$(get_hostname "$TOR_HIDDEN_SERVICE_DIR")"
+fi
+
+# Print numbered hidden services
+env | sort | while IFS='=' read -r key value
+do
+    case "$key" in
+        *_TOR_HIDDEN_SERVICE_DIR)
+            service_name=$(echo "${key%_TOR_HIDDEN_SERVICE_DIR}" | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
+            print_service_hostname "$service_name" "$(get_hostname "$value")"
+            ;;
+    esac
+done
+
+echo "=========================================="
+echo ""
+
+# Wait for Tor to exit
+wait $tor_pid
