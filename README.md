@@ -66,7 +66,7 @@ docker run -d --name tor \
 
 If you'd like to tip me, thank you, that's very much appreciated.
 
-Please consider donating to the [Tor Project](https://donate.torproject.org)instead.
+Please consider donating to the [Tor Project](https://donate.torproject.org) instead.
 
 If you _really_ want to tip me, thank you kindly.
 
