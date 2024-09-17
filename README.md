@@ -46,7 +46,7 @@ For example:
 # Start up a single Nginx as an example
 docker run -d --name nginx --restart=always nginx:alpine
 
-# Create 2 hidden services pointed at the same Nginx container
+# Create 3 hidden services pointed at the same Nginx container
 docker run -d --name tor \
   --restart=always \
   -p 9050:9050 \
@@ -55,6 +55,8 @@ docker run -d --name tor \
   -e NGINX_TOR_HIDDEN_SERVICE_PORT="80 nginx:80" \
   -e ANOTHER_NGINX_TOR_HIDDEN_SERVICE_DIR=/var/lib/tor/another-nginx \
   -e ANOTHER_NGINX_TOR_HIDDEN_SERVICE_PORT="80 nginx:80" \
+  -e TOR_HIDDEN_SERVICE_DIR=/var/lib/tor/other-nginx \
+  -e TOR_HIDDEN_SERVICE_PORT="80 nginx:80" \
   -e TOR_HIDDEN_SERVICE_VERSION="3" \
   --link nginx:nginx \
   ghcr.io/rblaine95/tor
