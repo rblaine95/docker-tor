@@ -9,7 +9,6 @@ RUN \
   fi \
   && chown -R tor /etc/tor
 
-COPY entrypoint.sh /entrypoint.sh
 COPY LICENSE /LICENSE
 
 EXPOSE 9050
@@ -20,4 +19,5 @@ ENV TOR_DATA_DIRECTORY="/var/lib/tor"
 ENV TOR_LOG="notice stderr"
 ENV TOR_SOCKS_PORT="0.0.0.0:9050"
 
+COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/entrypoint.sh" ]
