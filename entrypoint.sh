@@ -12,16 +12,43 @@ to_camel_case() {
     echo "$1" | awk 'BEGIN{FS="_";OFS=""} {for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr(tolower($i),2)} 1'
 }
 
-# Process environment variables
-env | while IFS='=' read -r key value
+# Process environment variables for general Tor configuration
+env | sort | while IFS='=' read -r key value
 do
-    if [[ $key == TOR_* ]]
-    then
-        # Remove TOR_ prefix and convert to CamelCase
-        torrc_key=$(to_camel_case "${key#TOR_}")
-        # Append to torrc
-        echo "$torrc_key $value" >> $TORRC
-    fi
+    case "$key" in
+        TOR_*)
+            case "$key" in
+                *_TOR_HIDDEN_SERVICE_*) ;;
+                *)
+                    # Remove TOR_ prefix and convert to CamelCase
+                    torrc_key=$(to_camel_case "${key#TOR_}")
+                    # Append to torrc
+                    echo "$torrc_key $value" >> $TORRC
+                    ;;
+            esac
+            ;;
+    esac
+done
+
+# Process Hidden Services
+env | sort | while IFS='=' read -r key value
+do
+    case "$key" in
+        *_TOR_HIDDEN_SERVICE_DIR)
+            echo "HiddenServiceDir $value" >> $TORRC
+
+            # Extract service prefix
+            service_prefix=${key%_TOR_HIDDEN_SERVICE_DIR}
+
+            # Look for corresponding port configuration
+            port_value=$(env | grep "^${service_prefix}_TOR_HIDDEN_SERVICE_PORT=" | cut -d'=' -f2-)
+            if [ -n "$port_value" ]; then
+                echo "HiddenServicePort $port_value" >> $TORRC
+            fi
+
+            echo "" >> $TORRC  # Add a blank line for readability
+            ;;
+    esac
 done
 
 # Print the generated torrc for debugging
