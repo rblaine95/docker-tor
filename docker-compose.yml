@@ -1,0 +1,43 @@
+services:
+  prep-tor-data:
+    container_name: prep-volume
+    image: alpine
+    volumes:
+      - ./tor-data:/var/lib/tor
+    command:
+      - sh
+      - -c
+      - |
+        chown -R 100:65533 /var/lib/tor
+        chmod 0700 /var/lib/tor
+
+  tor:
+    container_name: tor
+    image: ghcr.io/rblaine95/tor
+    volumes:
+      - ./tor-data:/var/lib/tor
+    ports:
+      - 9050:9050
+    environment:
+      TOR_DATA_DIRECTORY: /var/lib/tor
+      TOR_LOG: notice stderr
+      TOR_SOCKS_PORT: 0.0.0.0:9050
+
+      TOR_HIDDEN_SERVICE_DIR: /var/lib/tor/nginx
+      TOR_HIDDEN_SERVICE_PORT: 80 nginx:80
+
+      NGINX_TOR_HIDDEN_SERVICE_DIR: /var/lib/tor/nginx-nginx
+      NGINX_TOR_HIDDEN_SERVICE_PORT: 80 nginx:80
+
+      ANOTHER_NGINX_TOR_HIDDEN_SERVICE_DIR: /var/lib/tor/another-nginx
+      ANOTHER_NGINX_TOR_HIDDEN_SERVICE_PORT: 80 nginx:80
+    links:
+      - nginx
+    depends_on:
+      - prep-tor-data
+
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
+    ports:
+      - 8080:80
