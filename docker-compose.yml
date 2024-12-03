@@ -31,6 +31,10 @@ services:
 
       ANOTHER_NGINX_TOR_HIDDEN_SERVICE_DIR: /var/lib/tor/another-nginx
       ANOTHER_NGINX_TOR_HIDDEN_SERVICE_PORT: 80 nginx:80
+
+      MULTI_NGINX_TOR_HIDDEN_SERVICE_DIR: /var/lib/tor/multi-nginx
+      MULTI_NGINX_A_TOR_HIDDEN_SERVICE_PORT: 80 nginx:80
+      MULTI_NGINX_B_TOR_HIDDEN_SERVICE_PORT: 8080 nginx:80
     links:
       - nginx
     depends_on:

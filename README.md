@@ -62,6 +62,22 @@ docker run -d --name tor \
   ghcr.io/rblaine95/tor
 ```
 
+### Multiple Hidden Service Ports for the same Service Directory
+
+```sh
+docker run -d --name nginx --restart=always nginx:alpine
+
+docker run -d --name tor \
+  --restart=always \
+  -p 9050:9050 \
+  -v $(pwd)/tor-data:/var/lib/tor \
+  -e NGINX_TOR_HIDDEN_SERVICE_DIR=/var/lib/tor/nginx \
+  -e NGINX_A_TOR_HIDDEN_SERVICE_PORT="80 nginx:80" \
+  -e NGINX_B_TOR_HIDDEN_SERVICE_PORT="8080 nginx:80" \
+  --link nginx:nginx \
+  ghcr.io/rblaine95/tor
+```
+
 ## Tips
 
 If you'd like to tip me, thank you, that's very much appreciated.

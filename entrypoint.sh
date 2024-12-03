@@ -36,32 +36,60 @@ done
 # Get the HiddenServiceVersion if set
 hidden_service_version=${TOR_HIDDEN_SERVICE_VERSION:-""}
 
-# Function to add a hidden service to torrc
-add_hidden_service() {
+# Function to write hidden service configuration
+write_hidden_service_config() {
     local dir="$1"
-    local port="$2"
+    local prefix="$2"
+
     echo "HiddenServiceDir $dir" >> $TORRC
-    echo "HiddenServicePort $port" >> $TORRC
     if [ -n "$hidden_service_version" ]; then
         echo "HiddenServiceVersion $hidden_service_version" >> $TORRC
     fi
-    echo "" >> $TORRC  # Add a blank line for readability
+
+    # First try exact port match
+    if [ "$prefix" = "TOR" ]; then
+        # Handle unprefixed TOR_HIDDEN_SERVICE_PORT
+        port_value="$TOR_HIDDEN_SERVICE_PORT"
+    else
+        port_value=$(env | grep "^${prefix}_TOR_HIDDEN_SERVICE_PORT=" | cut -d'=' -f2-)
+    fi
+
+    if [ -n "$port_value" ]; then
+        echo "HiddenServicePort $port_value" >> $TORRC
+    else
+        # Then try multi-port matches
+        env | sort | while IFS='=' read -r port_key port_value
+        do
+            case "$port_key" in
+                ${prefix}_*_TOR_HIDDEN_SERVICE_PORT)
+                    echo "HiddenServicePort $port_value" >> $TORRC
+                    ;;
+            esac
+        done
+    fi
+
+    echo "" >> $TORRC
 }
 
-# Add default hidden service if specified
-if [ -n "$TOR_HIDDEN_SERVICE_DIR" ] && [ -n "$TOR_HIDDEN_SERVICE_PORT" ]; then
-    add_hidden_service "$TOR_HIDDEN_SERVICE_DIR" "$TOR_HIDDEN_SERVICE_PORT"
+# Handle default TOR_HIDDEN_SERVICE_* configuration
+if [ -n "$TOR_HIDDEN_SERVICE_DIR" ]; then
+    write_hidden_service_config "$TOR_HIDDEN_SERVICE_DIR" "TOR"
 fi
 
-# Process numbered Hidden Services
+# Process all other hidden services
+processed_dirs=""
+
 env | sort | while IFS='=' read -r key value
 do
     case "$key" in
         *_TOR_HIDDEN_SERVICE_DIR)
-            service_prefix=${key%_TOR_HIDDEN_SERVICE_DIR}
-            port_value=$(env | grep "^${service_prefix}_TOR_HIDDEN_SERVICE_PORT=" | cut -d'=' -f2-)
-            if [ -n "$port_value" ]; then
-                add_hidden_service "$value" "$port_value"
+            prefix=${key%_TOR_HIDDEN_SERVICE_DIR}
+            dir_value="$value"
+
+            # Skip if we've already processed this directory
+            if ! echo "$processed_dirs" | grep -q "^${dir_value}$"; then
+                write_hidden_service_config "$dir_value" "$prefix"
+                processed_dirs="${processed_dirs}${dir_value}\n"
             fi
             ;;
     esac
@@ -97,22 +125,23 @@ echo "======== Hidden Service Hostnames ========"
 
 # Print default hidden service if exists
 if [ -n "$TOR_HIDDEN_SERVICE_DIR" ]; then
-    print_service_hostname "Default" "$(get_hostname "$TOR_HIDDEN_SERVICE_DIR")"
+    print_service_hostname "default" "$(get_hostname "$TOR_HIDDEN_SERVICE_DIR")"
 fi
 
-# Print numbered hidden services
+# Print prefixed hidden services
 env | sort | while IFS='=' read -r key value
 do
     case "$key" in
         *_TOR_HIDDEN_SERVICE_DIR)
-            service_name=$(echo "${key%_TOR_HIDDEN_SERVICE_DIR}" | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
-            print_service_hostname "$service_name" "$(get_hostname "$value")"
+            if [ "$key" != "TOR_HIDDEN_SERVICE_DIR" ]; then  # Skip the default one as we already printed it
+                service_name=$(echo "${key%_TOR_HIDDEN_SERVICE_DIR}" | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
+                print_service_hostname "$service_name" "$(get_hostname "$value")"
+            fi
             ;;
     esac
 done
 
 echo "=========================================="
-echo ""
 
 # Wait for Tor to exit
 wait $tor_pid
