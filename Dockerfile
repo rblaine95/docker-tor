@@ -18,7 +18,7 @@ HEALTHCHECK --interval=10s --timeout=10s --start-period=5s --retries=3 \
       --socks5-hostname localhost:9050 \
       -s \
       -f \
-      https://check.torproject.org > /dev/null || exit 1
+      https://check.torproject.org/api/ip | grep -q '"IsTor":true' || exit 1
 
 USER tor
 
