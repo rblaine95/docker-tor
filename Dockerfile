@@ -1,7 +1,7 @@
 FROM docker.io/alpine:3
 
 ARG TOR_VERSION="latest"
-RUN \
+RUN apk add --update --no-cache curl && \
   if [ "$TOR_VERSION" = "latest" ]; then \
     apk add --update --no-cache tor; \
   else \
@@ -12,6 +12,13 @@ RUN \
 COPY LICENSE /LICENSE
 
 EXPOSE 9050
+
+HEALTHCHECK --interval=10s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl --socks5 localhost:9050 \
+      --socks5-hostname localhost:9050 \
+      -s \
+      -f \
+      https://check.torproject.org > /dev/null || exit 1
 
 USER tor
 
