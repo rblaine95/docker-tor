@@ -55,6 +55,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          no-cache: ${{ github.event_name == 'schedule' }}
           cache-from: |
             type=gha,scope=build-tor
             type=registry,ref=ghcr.io/${{ github.repository_owner }}/tor:latest
