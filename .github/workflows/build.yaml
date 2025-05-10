@@ -41,7 +41,8 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/tor
           tags: |
-            type=raw,value=latest,enabled=${{ github.event_name != 'schedule' && github.ref_type == 'tag' }}
+            type=ref,event=branch,suffix={{sha}}
+            type=raw,value=latest,enabled=${{ github.ref_type == 'tag' }}
             type=raw,value=${{ steps.version.outputs.FULL_TAG }},enabled=${{ github.ref_type == 'tag' }}
             type=raw,value=${{ steps.version.outputs.SHORT_TAG }},enabled=${{ github.ref_type == 'tag' }}
             type=schedule,pattern={{date 'YYYYMMDD'}}
