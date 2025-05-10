@@ -41,10 +41,10 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/tor
           tags: |
-            type=ref,event=branch,suffix={{sha}}
-            type=raw,value=latest,enabled=${{ github.ref_type == 'tag' }}
-            type=raw,value=${{ steps.version.outputs.FULL_TAG }},enabled=${{ github.ref_type == 'tag' }}
-            type=raw,value=${{ steps.version.outputs.SHORT_TAG }},enabled=${{ github.ref_type == 'tag' }}
+            type=ref,event=branch,suffix=-{{sha}}
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
+            type=raw,value=${{ steps.version.outputs.FULL_TAG }},enable=${{ github.ref_type == 'tag' }}
+            type=raw,value=${{ steps.version.outputs.SHORT_TAG }},enable=${{ github.ref_type == 'tag' }}
             type=schedule,pattern={{date 'YYYYMMDD'}}
       - uses: docker/build-push-action@v6
         with:
