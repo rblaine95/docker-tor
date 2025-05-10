@@ -2,6 +2,9 @@
 
 A very simple Alpine based Docker container for running Tor.
 
+[![Latest Built Tag](https://img.shields.io/github/v/tag/rblaine95/docker-tor?label=Latest%20Built%20Tag)](https://ghcr.io/rblaine95/tor)
+[![Latest Tor Tag](https://img.shields.io/gitlab/v/tag/tpo%2Fcore%2Ftor?label=Latest%20Tor%20Tag&gitlab_url=https%3A%2F%2Fgitlab.torproject.org&sort=semver)](https://gitlab.torproject.org/tpo/core/tor/-/tags)
+
 ## Usage
 
 ```sh

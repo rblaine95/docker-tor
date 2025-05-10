@@ -35,18 +35,15 @@ jobs:
             SHORT_VERSION=$(echo $FULL_VERSION | cut -d'-' -f1)
             echo "FULL_TAG=$FULL_VERSION" >> $GITHUB_OUTPUT
             echo "SHORT_TAG=$SHORT_VERSION" >> $GITHUB_OUTPUT
-            echo "IS_TAG=true" >> $GITHUB_OUTPUT
-          else
-            echo "IS_TAG=false" >> $GITHUB_OUTPUT
           fi
       - uses: docker/metadata-action@v5
         id: meta
         with:
           images: ghcr.io/${{ github.repository_owner }}/tor
           tags: |
-            type=raw,value=latest,enabled=${{ github.event_name != 'schedule' && (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) || steps.version.outputs.IS_TAG == 'true') }}
-            type=raw,value=${{ steps.version.outputs.FULL_TAG }},enabled=${{ steps.version.outputs.IS_TAG == 'true' }}
-            type=raw,value=${{ steps.version.outputs.SHORT_TAG }},enabled=${{ steps.version.outputs.IS_TAG == 'true' }}
+            type=raw,value=latest,enabled=${{ github.event_name != 'schedule' && github.ref_type == 'tag' }}
+            type=raw,value=${{ steps.version.outputs.FULL_TAG }},enabled=${{ github.ref_type == 'tag' }}
+            type=raw,value=${{ steps.version.outputs.SHORT_TAG }},enabled=${{ github.ref_type == 'tag' }}
             type=schedule,pattern={{date 'YYYYMMDD'}}
       - uses: docker/build-push-action@v6
         with:
@@ -58,4 +55,4 @@ jobs:
           no-cache: true
           platforms: linux/amd64,linux/arm64
           build-args: |
-            TOR_VERSION=${{ steps.version.outputs.IS_TAG == 'true' && steps.version.outputs.FULL_TAG || 'latest' }}
+            TOR_VERSION=${{ github.ref_type == 'tag' && steps.version.outputs.FULL_TAG || 'latest' }}
