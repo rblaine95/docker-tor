@@ -45,7 +45,7 @@ jobs:
             echo "FULL_TAG=$FULL_VERSION" >> $GITHUB_OUTPUT
             echo "SHORT_TAG=$SHORT_VERSION" >> $GITHUB_OUTPUT
           fi
-      - uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
+      - uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         id: meta
         with:
           images: ghcr.io/${{ github.repository_owner }}/tor
